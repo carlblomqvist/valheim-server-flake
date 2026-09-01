@@ -14,6 +14,28 @@
   instanceNames = builtins.attrNames instances;
   instanceList = builtins.attrValues instances;
 
+  # Every instance claims `port` and `port + 1`, so two instances less than two
+  # apart overlap even when their game ports differ.
+  portConflicts = let
+    named =
+      lib.mapAttrsToList (name: instance: {
+        inherit name;
+        inherit (instance) port;
+      })
+      instances;
+  in
+    lib.concatMap (
+      a:
+        lib.concatMap (
+          b:
+            lib.optional
+            (a.name < b.name && (a.port - b.port) < 2 && (b.port - a.port) < 2)
+            "${a.name} (port ${toString a.port}) and ${b.name} (port ${toString b.port})"
+        )
+        named
+    )
+    named;
+
   instanceModule = {name, ...}: {
     options = {
       enable =
@@ -44,7 +66,8 @@
         description = lib.mdDoc ''
           The port on which to listen for incoming connections.
 
-          Note that the port just above this one will be used for the Steam server browser service.
+          Note that the port just above this one is used as the Steam query port,
+          so instance ports must be at least 2 apart.
         '';
       };
 
@@ -375,7 +398,7 @@ in {
         instance:
           lib.optionals instance.openFirewall [
             instance.port
-            (instance.port + 1) # Steam server browser
+            (instance.port + 1) # Steam query port
           ]
       )
       instanceList;
@@ -387,11 +410,12 @@ in {
           message = "services.valheim and services.valheimInstances both manage ${stateRoot}; enable only one of them.";
         }
         {
-          assertion = let
-            ports = map (instance: instance.port) instanceList;
-          in
-            lib.length (lib.unique ports) == lib.length ports;
-          message = "Each services.valheimInstances entry needs a unique port (instances also claim port + 1).";
+          assertion = portConflicts == [];
+          message = ''
+            Overlapping services.valheimInstances ports: ${lib.concatStringsSep ", " portConflicts}.
+            Each instance claims its port and the Steam query port just above it,
+            so instance ports must be at least 2 apart.
+          '';
         }
       ]
       ++ lib.concatMap (name: let
