@@ -56,6 +56,7 @@
 
     nixosModules = rec {
       valheim = import ./nixos-modules/valheim.nix {inherit self steam-fetcher;};
+      valheim-instances = import ./nixos-modules/valheim-instances.nix {inherit self steam-fetcher;};
       default = valheim;
     };
     overlays.default = final: prev: {
