@@ -115,6 +115,21 @@
         '';
       };
 
+      modifiers = lib.mkOption {
+        type = with lib.types; attrsOf str;
+        default = {};
+        example = {
+          portals = "casual";
+          raids = "none";
+        };
+        description = lib.mdDoc ''
+          Individual world modifiers, passed as `-modifier <key> <value>`.
+
+          Keys are "combat", "deathpenalty", "resources", "raids" and
+          "portals". These are applied on top of {option}`preset`.
+        '';
+      };
+
       password = lib.mkOption {
         type = with lib.types; nullOr str;
         default = null;
@@ -345,6 +360,7 @@
           ]
           ++ (lib.lists.optional instance.crossplay "-crossplay")
           ++ (lib.lists.optional (instance.preset != null) "-preset \"${instance.preset}\"")
+          ++ (lib.attrsets.mapAttrsToList (key: value: "-modifier \"${key}\" \"${value}\"") instance.modifiers)
           ++ (lib.lists.optional instance.noGraphics "-nographics"));
       };
     };
