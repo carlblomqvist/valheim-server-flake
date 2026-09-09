@@ -54,7 +54,7 @@ in {
         client to be modded, as only PC versions can run mods.
       '';
     };
-    
+
     noGraphics = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -142,7 +142,7 @@ in {
         If you use this, all players not on the list will be unable to join.
       '';
     };
-    
+
     bannedList = lib.mkOption {
       type = with lib.types; listOf str;
       default = [];
@@ -191,7 +191,7 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    nixpkgs.overlays = [self.overlays.default steam-fetcher.overlays.default];
+    nixpkgs.overlays = [self.overlays.default steam-fetcher.overlay];
 
     users = {
       users.valheim = {
@@ -207,7 +207,10 @@ in {
       installDir = "${stateDir}/valheim-server-modded";
       # If passwordEnvFile is provided then use environment variable, else insert password in unit file directly.
       # Assertions ensure that other cases are not possible.
-      serverPassword = if cfg.passwordEnvFile != null then "\"\${VH_SERVER_PASSWORD}\"" else cfg.password;
+      serverPassword =
+        if cfg.passwordEnvFile != null
+        then "\"\${VH_SERVER_PASSWORD}\""
+        else cfg.password;
     in {
       valheim = {
         description = "Valheim dedicated server";
@@ -236,10 +239,10 @@ in {
               done
             '';
           createListFile = name: list: ''
-              echo "// List of Steam IDs for ${name} ONE per line
-              ${lib.strings.concatStringsSep "\n" list}" > ${stateDir}/.config/unity3d/IronGate/Valheim/${name}
-              chown valheim:valheim ${stateDir}/.config/unity3d/IronGate/Valheim/${name}
-            '';
+            echo "// List of Steam IDs for ${name} ONE per line
+            ${lib.strings.concatStringsSep "\n" list}" > ${stateDir}/.config/unity3d/IronGate/Valheim/${name}
+            chown valheim:valheim ${stateDir}/.config/unity3d/IronGate/Valheim/${name}
+          '';
         in
           ''
             mkdir -p ${stateDir}/.config/unity3d/IronGate/Valheim
@@ -321,7 +324,11 @@ in {
               ++ [
                 "-port \"${builtins.toString cfg.port}\""
                 "-password ${serverPassword}"
-                "-public ${if cfg.public then "1" else "0"}"
+                "-public ${
+                  if cfg.public
+                  then "1"
+                  else "0"
+                }"
               ]
               ++ (lib.lists.optional cfg.crossplay "-crossplay")
               ++ (lib.lists.optional (cfg.preset != null) "-preset \"${cfg.preset}\"")

@@ -395,7 +395,7 @@ in {
   };
 
   config = {
-    nixpkgs.overlays = [self.overlays.default steam-fetcher.overlays.default];
+    nixpkgs.overlays = [self.overlays.default steam-fetcher.overlay];
 
     users = lib.mkIf (instanceNames != []) {
       users.valheim = {
